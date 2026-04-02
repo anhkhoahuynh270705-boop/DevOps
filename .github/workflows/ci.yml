@@ -35,8 +35,9 @@ jobs:
         with:
           node-version: '18'
 
+      # Init database schema từ file database.sql
       - name: Init database schema
-        run: psql -h localhost -U myuser -d mydatabase -f database/database.sql
+        run: psql -h db -U myuser -d mydatabase -f database/database.sql
         env:
           PGPASSWORD: mypass
 
