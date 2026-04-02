@@ -27,10 +27,11 @@ jobs:
           --health-retries=5
 
     steps:
+      # 1. Checkout code
       - name: Checkout code
         uses: actions/checkout@v3
 
-  
+      # 2. Setup Node.js (FIX cache path)
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
@@ -38,14 +39,15 @@ jobs:
           cache: 'npm'
           cache-dependency-path: backend/package-lock.json
 
-  
+      # 3. Install backend dependencies
       - name: Install dependencies
         run: npm install
-        working-directory: backend
+        working-directory: ./backend
 
+      # 4. Run tests
       - name: Run tests
         run: npm test
-        working-directory: backend
+        working-directory: ./backend
         env:
           DB_HOST: localhost
           DB_PORT: 5432
