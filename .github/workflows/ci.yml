@@ -44,9 +44,12 @@ jobs:
         run: npm install
         working-directory: ./backend
 
+      - name: Fix jest permission
+        run: chmod +x ./backend/node_modules/.bin/jest
+
       # 4. Run tests
       - name: Run tests
-        run: npm test
+        run: npx jest
         working-directory: ./backend
         env:
           DB_HOST: localhost
