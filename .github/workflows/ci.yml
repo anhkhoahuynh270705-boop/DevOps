@@ -35,6 +35,12 @@ jobs:
         with:
           node-version: '18'
 
+      # NEW STEP: Init database schema
+      - name: Init database schema
+        run: psql -h localhost -U myuser -d mydatabase -f database/database.sql
+        env:
+          PGPASSWORD: mypass
+
       - name: Install dependencies
         run: npm install
         working-directory: backend
@@ -43,7 +49,8 @@ jobs:
         run: npm test
         working-directory: backend
         env:
-          DB_HOST: localhost
+          NODE_ENV: test
+          DB_HOST: db
           DB_USER: myuser
           DB_PASSWORD: mypass
           DB_NAME: mydatabase
