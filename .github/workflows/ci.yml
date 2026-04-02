@@ -35,7 +35,6 @@ jobs:
         with:
           node-version: '18'
 
-      # NEW STEP: Init database schema
       - name: Init database schema
         run: psql -h localhost -U myuser -d mydatabase -f database/database.sql
         env:
