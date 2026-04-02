@@ -11,7 +11,7 @@ app.use(express.json());
 // FIX #1: Default password khớp với docker-compose
 const pool = new Pool({
   user: process.env.DB_USER || 'myuser',
-  host: process.env.DB_HOST || 'postgres',
+  host: process.env.DB_HOST || 'localhost',
   database: process.env.DB_NAME || 'mydatabase',
   password: process.env.DB_PASSWORD || 'mypass',
   port: process.env.DB_PORT || 5432,
