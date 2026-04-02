@@ -11,12 +11,29 @@ app.use(express.json());
 // FIX #1: Default password khớp với docker-compose
 const pool = new Pool({
   user: process.env.DB_USER || 'myuser',
-  host: process.env.DB_HOST || 'postgres',
+  host: process.env.DB_HOST || 'localhost',
   database: process.env.DB_NAME || 'mydatabase',
   password: process.env.DB_PASSWORD || 'mypass',
   port: process.env.DB_PORT || 5432,
 });
+const initDB = async () => {
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS todos (
+        id SERIAL PRIMARY KEY,
+        title VARCHAR(255) NOT NULL,
+        completed BOOLEAN DEFAULT false,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
 
+    console.log("✅ Table todos ready");
+  } catch (err) {
+    console.error("❌ DB init error:", err);
+  }
+};
+
+initDB();
 app.get('/health', (req, res) => {
   res.json({ status: 'healthy', version: '1.0.0' });
 });
