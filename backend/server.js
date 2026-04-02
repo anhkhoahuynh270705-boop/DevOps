@@ -50,7 +50,7 @@ app.post('/api/todos', async (req, res) => {
   }
 });
 
-// FIX #3: DELETE endpoint
+// DELETE endpoint
 app.delete('/api/todos/:id', async (req, res) => {
   try {
     const { id } = req.params;
@@ -58,7 +58,7 @@ app.delete('/api/todos/:id', async (req, res) => {
     if (result.rowCount === 0) {
       return res.status(404).json({ error: 'Todo not found' });
     }
-    res.json({ message: 'Todo deleted' });
+    res.json({ message: 'Deleted' });  
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
