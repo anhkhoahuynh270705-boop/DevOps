@@ -8,7 +8,7 @@ app.use(helmet());
 app.use(cors());
 app.use(express.json());
 
-// FIX #1: Default password khớp với docker-compose
+// DB config
 const pool = new Pool({
   user: process.env.DB_USER || 'myuser',
   host: process.env.DB_HOST || 'localhost',
@@ -16,6 +16,10 @@ const pool = new Pool({
   password: process.env.DB_PASSWORD || 'mypass',
   port: process.env.DB_PORT || 5432,
 });
+
+// ✅ INIT DB (đảm bảo chạy trước request)
+let dbReady = false;
+
 const initDB = async () => {
   try {
     await pool.query(`
@@ -27,13 +31,26 @@ const initDB = async () => {
       );
     `);
 
+    dbReady = true;
     console.log("✅ Table todos ready");
   } catch (err) {
     console.error("❌ DB init error:", err);
   }
 };
 
-initDB();
+// Middleware chờ DB ready
+app.use(async (req, res, next) => {
+  if (!dbReady) {
+    try {
+      await initDB();
+    } catch (err) {
+      return res.status(500).json({ error: "DB not ready" });
+    }
+  }
+  next();
+});
+
+// Health check
 app.get('/health', (req, res) => {
   res.json({ status: 'healthy', version: '1.0.0' });
 });
@@ -48,7 +65,7 @@ app.get('/api/todos', async (req, res) => {
   }
 });
 
-// FIX #2: Validation cho POST
+// POST todo
 app.post('/api/todos', async (req, res) => {
   try {
     const { title, completed = false } = req.body;
@@ -61,27 +78,34 @@ app.post('/api/todos', async (req, res) => {
       'INSERT INTO todos(title, completed) VALUES($1, $2) RETURNING *',
       [title.trim(), completed]
     );
+
     res.status(201).json(result.rows[0]);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// FIX #3: DELETE endpoint
+// DELETE todo
 app.delete('/api/todos/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const result = await pool.query('DELETE FROM todos WHERE id=$1 RETURNING *', [id]);
+
+    const result = await pool.query(
+      'DELETE FROM todos WHERE id=$1 RETURNING *',
+      [id]
+    );
+
     if (result.rowCount === 0) {
       return res.status(404).json({ error: 'Todo not found' });
     }
+
     res.json({ message: 'Todo deleted' });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// FIX #4: PUT endpoint
+// PUT todo
 app.put('/api/todos/:id', async (req, res) => {
   try {
     const { id } = req.params;
@@ -95,9 +119,11 @@ app.put('/api/todos/:id', async (req, res) => {
       'UPDATE todos SET title=$1, completed=$2 WHERE id=$3 RETURNING *',
       [title.trim(), completed, id]
     );
+
     if (result.rowCount === 0) {
       return res.status(404).json({ error: 'Todo not found' });
     }
+
     res.json(result.rows[0]);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -106,12 +132,14 @@ app.put('/api/todos/:id', async (req, res) => {
 
 const port = process.env.PORT || 8080;
 
-// FIX #5: Chỉ listen nếu không phải test
+// Start server (không chạy khi test)
 if (process.env.NODE_ENV !== 'test') {
-  app.listen(port, () => {
-    console.log(`Backend running on port ${port}`);
+  initDB().then(() => {
+    app.listen(port, () => {
+      console.log(`🚀 Backend running on port ${port}`);
+    });
   });
 }
 
-// FIX #6: Export app cho supertest
+// Export cho test
 module.exports = app;
