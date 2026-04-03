@@ -65,4 +65,4 @@ jobs:
         with:
           context: ./backend
           push: true
-          tags: ${{ secrets.DOCKER_HUB_USERNAME }}/devops-group-1:latest
+          tags: ${{ secrets.DOCKER_HUB_LONG }}/devops-group-1:latest
