@@ -1,79 +1,85 @@
-const express = require('express');
-const { Pool } = require('pg');
+const request = require('supertest');
+const app = require('../server');
 
-const app = express();
-app.use(express.json());
+describe('Todos API', () => {
+   // Test 1: Health check
+   it('GET /health should return healthy status', async () => {
+      const res = await request(app).get('/health');
+      expect(res.status).toBe(200);
+      expect(res.body.status).toBe('healthy');
+   });
 
-const pool = new Pool({
-  user: process.env.DB_USER || 'myuser',
-  host: process.env.DB_HOST || 'localhost',
-  database: process.env.DB_NAME || 'mydatabase',
-  password: process.env.DB_PASSWORD || 'mypass',
-  port: process.env.DB_PORT || 5432,
+   // Test 2: Get all todos
+   it('GET /api/todos should return array', async () => {
+      const res = await request(app).get('/api/todos');
+      expect(res.status).toBe(200);
+      expect(Array.isArray(res.body)).toBe(true);
+   });
+
+   // Test 3: Create todo with valid title
+   it('POST /api/todos creates todo with valid title', async () => {
+      const res = await request(app)
+         .post('/api/todos')
+         .send({ title: 'Test todo' });
+
+      expect(res.status).toBe(201);
+      expect(res.body.title).toBe('Test todo');
+      expect(res.body.completed).toBe(false);
+   });
+
+   // Test 4: Reject empty title
+   it('POST /api/todos rejects empty title', async () => {
+      const res = await request(app)
+         .post('/api/todos')
+         .send({});  // Missing title
+
+      expect(res.status).toBe(400);
+      expect(res.body.error).toMatch(/title/i);
+   });
+
+   // Test 5: Reject whitespace-only title
+   it('POST /api/todos rejects whitespace-only title', async () => {
+      const res = await request(app)
+         .post('/api/todos')
+         .send({ title: '   ' });  // Only whitespace
+
+      expect(res.status).toBe(400);
+      expect(res.body.error).toMatch(/title/i);
+   });
+
+   // Test 6: DELETE endpoint
+   it('DELETE /api/todos/:id removes todo', async () => {
+      // First create a todo
+      const createRes = await request(app)
+         .post('/api/todos')
+         .send({ title: 'To be deleted' });
+
+      const todoId = createRes.body.id;
+
+      // Then delete it
+      const deleteRes = await request(app)
+         .delete(`/api/todos/${todoId}`);
+
+      expect(deleteRes.status).toBe(200);
+      expect(deleteRes.body.message).toBe('Deleted');
+   });
+
+   // Test 7: PUT endpoint
+   it('PUT /api/todos/:id updates todo', async () => {
+      // First create a todo
+      const createRes = await request(app)
+         .post('/api/todos')
+         .send({ title: 'Original title' });
+
+      const todoId = createRes.body.id;
+
+      // Then update it
+      const updateRes = await request(app)
+         .put(`/api/todos/${todoId}`)
+         .send({ title: 'Updated title', completed: true });
+
+      expect(updateRes.status).toBe(200);
+      expect(updateRes.body.title).toBe('Updated title');
+      expect(updateRes.body.completed).toBe(true);
+   });
 });
-
-// Health check
-app.get('/health', (req, res) => {
-  res.json({ status: 'healthy' });
-});
-
-// GET all todos
-app.get('/api/todos', async (req, res) => {
-  try {
-    const result = await pool.query('SELECT * FROM todos ORDER BY id ASC');
-    res.status(200).json(result.rows);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// POST create todo
-app.post('/api/todos', async (req, res) => {
-  try {
-    const { title } = req.body;
-    if (!title || !title.trim()) {
-      return res.status(400).json({ error: 'Title is required' });
-    }
-    const result = await pool.query(
-      'INSERT INTO todos (title, completed) VALUES ($1, $2) RETURNING *',
-      [title.trim(), false]
-    );
-    res.status(201).json(result.rows[0]);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// DELETE todo
-app.delete('/api/todos/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const result = await pool.query('DELETE FROM todos WHERE id=$1 RETURNING *', [id]);
-    if (result.rowCount === 0) {
-      return res.status(404).json({ error: 'Todo not found' });
-    }
-    res.json({ message: 'Deleted' }); 
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// PUT update todo
-app.put('/api/todos/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { title, completed } = req.body;
-    const result = await pool.query(
-      'UPDATE todos SET title=$1, completed=$2 WHERE id=$3 RETURNING *',
-      [title, completed, id]
-    );
-    if (result.rowCount === 0) {
-      return res.status(404).json({ error: 'Todo not found' });
-    }
-    res.json(result.rows[0]);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-module.exports = app;
