@@ -1,85 +1,55 @@
-const request = require('supertest');
-const app = require('../server');
+// backend/server.js
+const express = require('express');
+const app = express();
 
-describe('Todos API', () => {
-   // Test 1: Health check
-   it('GET /health should return healthy status', async () => {
-      const res = await request(app).get('/health');
-      expect(res.status).toBe(200);
-      expect(res.body.status).toBe('healthy');
-   });
+app.use(express.json());
 
-   // Test 2: Get all todos
-   it('GET /api/todos should return array', async () => {
-      const res = await request(app).get('/api/todos');
-      expect(res.status).toBe(200);
-      expect(Array.isArray(res.body)).toBe(true);
-   });
+let todos = [];
+let idCounter = 1;
 
-   // Test 3: Create todo with valid title
-   it('POST /api/todos creates todo with valid title', async () => {
-      const res = await request(app)
-         .post('/api/todos')
-         .send({ title: 'Test todo' });
-
-      expect(res.status).toBe(201);
-      expect(res.body.title).toBe('Test todo');
-      expect(res.body.completed).toBe(false);
-   });
-
-   // Test 4: Reject empty title
-   it('POST /api/todos rejects empty title', async () => {
-      const res = await request(app)
-         .post('/api/todos')
-         .send({});  // Missing title
-
-      expect(res.status).toBe(400);
-      expect(res.body.error).toMatch(/title/i);
-   });
-
-   // Test 5: Reject whitespace-only title
-   it('POST /api/todos rejects whitespace-only title', async () => {
-      const res = await request(app)
-         .post('/api/todos')
-         .send({ title: '   ' });  // Only whitespace
-
-      expect(res.status).toBe(400);
-      expect(res.body.error).toMatch(/title/i);
-   });
-
-   // Test 6: DELETE endpoint
-   it('DELETE /api/todos/:id removes todo', async () => {
-      // First create a todo
-      const createRes = await request(app)
-         .post('/api/todos')
-         .send({ title: 'To be deleted' });
-
-      const todoId = createRes.body.id;
-
-      // Then delete it
-      const deleteRes = await request(app)
-         .delete(`/api/todos/${todoId}`);
-
-      expect(deleteRes.status).toBe(200);
-      expect(deleteRes.body.message).toBe('Deleted');
-   });
-
-   // Test 7: PUT endpoint
-   it('PUT /api/todos/:id updates todo', async () => {
-      // First create a todo
-      const createRes = await request(app)
-         .post('/api/todos')
-         .send({ title: 'Original title' });
-
-      const todoId = createRes.body.id;
-
-      // Then update it
-      const updateRes = await request(app)
-         .put(`/api/todos/${todoId}`)
-         .send({ title: 'Updated title', completed: true });
-
-      expect(updateRes.status).toBe(200);
-      expect(updateRes.body.title).toBe('Updated title');
-      expect(updateRes.body.completed).toBe(true);
-   });
+// Health check
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'healthy' });
 });
+
+// GET all todos
+app.get('/api/todos', (req, res) => {
+  res.status(200).json(todos);
+});
+
+// POST create todo
+app.post('/api/todos', (req, res) => {
+  const { title } = req.body;
+  if (!title || !title.trim()) {
+    return res.status(400).json({ error: 'Title is required' });
+  }
+  const todo = { id: idCounter++, title: title.trim(), completed: false };
+  todos.push(todo);
+  res.status(201).json(todo);
+});
+
+// DELETE todo
+app.delete('/api/todos/:id', (req, res) => {
+  const id = parseInt(req.params.id);
+  const index = todos.findIndex(t => t.id === id);
+  if (index === -1) {
+    return res.status(404).json({ error: 'Todo not found' });
+  }
+  todos.splice(index, 1);
+  res.status(200).json({ message: 'Deleted' });
+});
+
+// PUT update todo
+app.put('/api/todos/:id', (req, res) => {
+  const id = parseInt(req.params.id);
+  const todo = todos.find(t => t.id === id);
+  if (!todo) {
+    return res.status(404).json({ error: 'Todo not found' });
+  }
+  const { title, completed } = req.body;
+  if (title !== undefined) todo.title = title.trim();
+  if (completed !== undefined) todo.completed = completed;
+  res.status(200).json(todo);
+});
+
+module.exports = app;
