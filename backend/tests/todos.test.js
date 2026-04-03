@@ -27,27 +27,27 @@ describe('Todos API', () => {
       expect(res.body.completed).toBe(false);
    });
 
-   // BROKEN TEST #1 - Validation not implemented!
+   // Test 4: Reject empty title
    it('POST /api/todos rejects empty title', async () => {
       const res = await request(app)
          .post('/api/todos')
          .send({});  // Missing title
 
-      expect(res.status).toBe(400);  // Will FAIL - returns 201!
+      expect(res.status).toBe(400);
       expect(res.body.error).toMatch(/title/i);
    });
 
-   // BROKEN TEST #2 - Whitespace title should be rejected!
+   // Test 5: Reject whitespace-only title
    it('POST /api/todos rejects whitespace-only title', async () => {
       const res = await request(app)
          .post('/api/todos')
          .send({ title: '   ' });  // Only whitespace
 
-      expect(res.status).toBe(400);  // Will FAIL!
+      expect(res.status).toBe(400);
       expect(res.body.error).toMatch(/title/i);
    });
 
-   // BROKEN TEST #3 - DELETE endpoint not implemented!
+   // Test 6: DELETE endpoint
    it('DELETE /api/todos/:id removes todo', async () => {
       // First create a todo
       const createRes = await request(app)
@@ -60,10 +60,11 @@ describe('Todos API', () => {
       const deleteRes = await request(app)
          .delete(`/api/todos/${todoId}`);
 
-      expect(deleteRes.status).toBe(200);  // Will FAIL - 404!
+      expect(deleteRes.status).toBe(200);
+      expect(deleteRes.body.message).toBe('Deleted');
    });
 
-   // BROKEN TEST #4 - PUT endpoint not implemented!
+   // Test 7: PUT endpoint
    it('PUT /api/todos/:id updates todo', async () => {
       // First create a todo
       const createRes = await request(app)
@@ -77,7 +78,7 @@ describe('Todos API', () => {
          .put(`/api/todos/${todoId}`)
          .send({ title: 'Updated title', completed: true });
 
-      expect(updateRes.status).toBe(200);  // Will FAIL - 404!
+      expect(updateRes.status).toBe(200);
       expect(updateRes.body.title).toBe('Updated title');
       expect(updateRes.body.completed).toBe(true);
    });
