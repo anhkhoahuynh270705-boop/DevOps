@@ -68,7 +68,7 @@ jobs:
           context: ./backend
           file: ./backend/Dockerfile
           push: true
-          tags: ${{ secrets.DOCKER_HUB_ANHKHOAHUYNH270705 }}anhkhoahuynh270705/devops-group-3:latest
+          tags: ${{ secrets.DOCKER_HUB_ANHKHOAHUYNH270705 }}/devops-group-3:latest
 
   # ========================
   # 🚀 DEPLOY JOB
