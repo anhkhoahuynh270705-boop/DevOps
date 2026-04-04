@@ -59,7 +59,7 @@ jobs:
       - name: Log in to Docker Hub
         uses: docker/login-action@v2
         with:
-          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          username: ${{ secrets.DOCKER_HUB_ANHKHOAHUYNH270705 }}
           password: ${{ secrets.DOCKER_HUB_PASSWORD }}
 
       - name: Build and push Docker image
@@ -67,7 +67,7 @@ jobs:
         with:
           context: .
           push: true
-          tags: ${{ secrets.DOCKER_HUB_USERNAME }}/devops-app:latest
+          tags: ${{ secrets.DOCKER_HUB_ANHKHOAHUYNH270705 }}anhkhoahuynh270705/devops-group-1:latest
 
   # ========================
   # 🚀 DEPLOY JOB
