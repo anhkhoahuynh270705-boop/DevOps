@@ -1,3 +1,13 @@
+const express = require('express');
+const { Pool } = require('pg');
+const cors = require('cors');
+const helmet = require('helmet');
+
+const app = express();
+app.use(helmet());
+app.use(cors());
+app.use(express.json());
+
 if (process.env.NODE_ENV === 'test') {
   // fake DB
   let todos = [];
@@ -30,15 +40,7 @@ if (process.env.NODE_ENV === 'test') {
     res.json(todo);
   });
 }
-const express = require('express');
-const { Pool } = require('pg');
-const cors = require('cors');
-const helmet = require('helmet');
 
-const app = express();
-app.use(helmet());
-app.use(cors());
-app.use(express.json());
 
 // FIX #1: Default password khớp với docker-compose
 const pool = new Pool({
