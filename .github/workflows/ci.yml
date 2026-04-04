@@ -65,7 +65,8 @@ jobs:
       - name: Build and push Docker image
         uses: docker/build-push-action@v4
         with:
-          context: .
+          context: ./backend
+          file: ./backend/Dockerfile
           push: true
           tags: ${{ secrets.DOCKER_HUB_ANHKHOAHUYNH270705 }}anhkhoahuynh270705/devops-group-1:latest
 
