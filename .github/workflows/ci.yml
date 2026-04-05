@@ -76,8 +76,8 @@ jobs:
       - name: Deploy to Server via SSH
         uses: appleboy/ssh-action@master
         with:
-          host: ${{ secrets.HOST }}
-          username: ${{ secrets.USERNAME }}
+          host: ${{ secrets.HOST_LONG }}
+          username: ${{ secrets.USERNAME_LONG }}
           key: ${{ secrets.SSH_PRIVATE_KEY_LONG }}
           script: |
             cd /var/www/DevOps
