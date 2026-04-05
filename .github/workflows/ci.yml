@@ -73,6 +73,9 @@ jobs:
     needs: build-and-test
     if: always()
     steps:
+      - name: Test SSH connectivity
+        run: nc -vz 103.1.236.26 22
+
       - name: Deploy to Server via SSH
         uses: appleboy/ssh-action@master
         with:
