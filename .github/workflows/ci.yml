@@ -78,7 +78,7 @@ jobs:
         with:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USERNAME }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          key: ${{ secrets.SSH_PRIVATE_KEY_LONG }}
           script: |
             cd /var/www/DevOps
             sudo git pull origin main
