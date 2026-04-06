@@ -1,0 +1,89 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-test:
+    name: Build & Test
+    runs-on: ubuntu-latest
+
+    services:
+      db:
+        image: postgres:14-alpine
+        env:
+          POSTGRES_USER: myuser
+          POSTGRES_PASSWORD: mypass
+          POSTGRES_DB: mydatabase
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Init database schema
+        run: psql -h localhost -U myuser -d mydatabase -f database/database.sql
+        env:
+          PGPASSWORD: mypass
+
+      - name: Install dependencies
+        run: npm install
+        working-directory: backend
+
+      - name: Run tests
+        run: npm test
+        working-directory: backend
+        env:
+          NODE_ENV: test
+          DB_HOST: localhost
+          DB_USER: myuser
+          DB_PASSWORD: mypass
+          DB_NAME: mydatabase
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_HUB_LONG }}
+          password: ${{ secrets.DOCKER_HUB_PASSWORD_LONG }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v4
+        with:
+          context: ./backend
+          push: true
+          tags: ${{ secrets.DOCKER_HUB_LONG }}/devops-group-1:latest
+
+  deploy:
+    name: Deploy to Server
+    runs-on: ubuntu-latest
+    needs: build-and-test
+    if: always()
+    steps:
+      - name: Test SSH connectivity
+        run: nc -vz 103.1.236.26 22
+
+      - name: Deploy to Server via SSH
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.HOST_LONG }}
+          username: ${{ secrets.USERNAME_LONG }}
+          key: ${{ secrets.SSH_PRIVATE_KEY_LONG }}
+          script: |
+            cd /var/www/DevOps
+            sudo git pull origin main
+            sudo docker-compose pull
+            sudo docker-compose up -d
