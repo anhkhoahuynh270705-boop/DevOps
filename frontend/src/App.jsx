@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 
   // STUDENT TODO: This API_URL works for local development
   // For Docker, you may need to configure nginx proxy or use container networking
-  const API_URL = 'http://localhost:5000';
+  const API_URL = 'http://103.1.236.26:5000';
 
   function App() {
     const [todos, setTodos] = useState([]);
@@ -54,21 +54,24 @@ import { useState, useEffect } from 'react';
             Add Todo
           </button>
         </div>
-
-        <ul style={{ listStyle: 'none', padding: 0 }}>
-          {todos.map(todo => (
-            <li key={todo.id} style={{
-              padding: '10px',
-              border: '1px solid #ddd',
-              marginBottom: '5px',
-              display: 'flex',
-              justifyContent: 'space-between'
-            }}>
-              <span>{todo.title}</span>
-              <small>{todo.completed ? '✅' : '⏳'}</small>
-            </li>
-          ))}
-        </ul>
+          <ul style={{ listStyle: 'none', padding: 0 }}>
+            {Array.isArray(todos) && todos.length > 0 ? (
+              todos.map(todo => (
+                <li key={todo.id} style={{
+                  padding: '10px',
+                  border: '1px solid #ddd',
+                  marginBottom: '5px',
+                  display: 'flex',
+                  justifyContent: 'space-between'
+                }}>
+                  <span>{todo.title}</span>
+                  <small>{todo.completed ? '✅' : '⏳'}</small>
+                </li>
+              ))
+            ) : (
+              <p>No todos found</p>
+            )}
+          </ul>
 
         <div style={{ marginTop: '30px', fontSize: '12px', color: '#666' }}>
           <p><strong>STUDENT TODO:</strong></p>

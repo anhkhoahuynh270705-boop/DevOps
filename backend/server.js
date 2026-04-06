@@ -9,7 +9,7 @@ app.use(cors());
 app.use(express.json());
 
 if (process.env.NODE_ENV === 'test') {
-  // fake DB
+
   let todos = [];
   let id = 1;
 
