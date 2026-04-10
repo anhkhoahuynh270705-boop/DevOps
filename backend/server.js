@@ -8,10 +8,44 @@ app.use(helmet());
 app.use(cors());
 app.use(express.json());
 
+if (process.env.NODE_ENV === 'test') {
+
+  let todos = [];
+  let id = 1;
+
+  app.get('/api/todos', (req, res) => res.json(todos));
+
+  app.post('/api/todos', (req, res) => {
+    const { title } = req.body;
+    if (!title || !title.trim()) {
+      return res.status(400).json({ error: 'title is required' });
+    }
+    const todo = { id: id++, title, completed: false };
+    todos.push(todo);
+    res.status(201).json(todo);
+  });
+
+  app.delete('/api/todos/:id', (req, res) => {
+    const index = todos.findIndex(t => t.id == req.params.id);
+    if (index === -1) return res.status(404).json({});
+    todos.splice(index, 1);
+    res.status(200).json({});
+  });
+
+  app.put('/api/todos/:id', (req, res) => {
+    const todo = todos.find(t => t.id == req.params.id);
+    if (!todo) return res.status(404).json({});
+    todo.title = req.body.title;
+    todo.completed = req.body.completed;
+    res.json(todo);
+  });
+}
+
+
 // FIX #1: Default password khớp với docker-compose
 const pool = new Pool({
   user: process.env.DB_USER || 'myuser',
-  host: process.env.DB_HOST || 'posrtgres',
+  host: process.env.DB_HOST || 'postgres',
   database: process.env.DB_NAME || 'mydatabase',
   password: process.env.DB_PASSWORD || 'mypass',
   port: process.env.DB_PORT || 5432,

@@ -50,7 +50,7 @@ services:
   backend:
     build: ./backend
     ports:
-      - "5000:8080"
+      - "80:5000"
     environment:
       - DB_HOST=postgres
       - DB_PORT=5432
