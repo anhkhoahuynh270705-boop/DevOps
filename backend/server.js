@@ -7,63 +7,47 @@ const helmet = require('helmet');
 
 const app = express();
 
-// 🔐 Security + middleware
+// Middleware
 app.use(helmet());
 app.use(cors());
 app.use(express.json());
 
-// 🎯 Auto detect environment
-const isDocker = process.env.DB_HOST === 'postgres';
-
-// 🔥 DB CONFIG CHUẨN
+// DB
 const pool = new Pool({
-  host: process.env.DB_HOST,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
+  host: process.env.DB_HOST || 'localhost',
+  user: process.env.DB_USER || 'myuser',
+  password: process.env.DB_PASSWORD || 'mypass',
+  database: process.env.DB_NAME || 'devops',
   port: process.env.DB_PORT || 5432,
-  max: 20,
-  connectionTimeoutMillis: 5000,
-  idleTimeoutMillis: 30000,
 });
+
+// INIT DB
 const initDB = async () => {
-  try {
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS todos (
-        id SERIAL PRIMARY KEY,
-        title TEXT NOT NULL,
-        completed BOOLEAN DEFAULT FALSE
-      )
-    `);
-    console.log('✅ Table todos ready');
-  } catch (err) {
-    console.error('❌ Init DB error:', err.message);
-  }
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS todos (
+      id SERIAL PRIMARY KEY,
+      title TEXT NOT NULL,
+      completed BOOLEAN DEFAULT FALSE
+    )
+  `);
 };
 
-initDB();
-// ✅ Test DB connection khi start server
-pool.connect()
-  .then(() => console.log('✅ Connected to PostgreSQL'))
-  .catch(err => console.error('❌ DB connection error:', err.message));
-
-// 🩺 Health check
+// Health
 app.get('/health', (req, res) => {
-  res.json({ status: 'healthy', version: '1.0.0' });
+  res.json({ status: 'healthy' });
 });
 
-// 📥 GET todos
+// GET
 app.get('/api/todos', async (req, res) => {
   try {
     const result = await pool.query('SELECT * FROM todos ORDER BY id');
     res.json(result.rows);
   } catch (err) {
-    console.error(err);
     res.status(500).json({ error: err.message });
   }
 });
 
-// ➕ CREATE todo
+// POST
 app.post('/api/todos', async (req, res) => {
   try {
     const { title, completed = false } = req.body;
@@ -79,19 +63,16 @@ app.post('/api/todos', async (req, res) => {
 
     res.status(201).json(result.rows[0]);
   } catch (err) {
-    console.error(err);
     res.status(500).json({ error: err.message });
   }
 });
 
-// ❌ DELETE todo
+// DELETE
 app.delete('/api/todos/:id', async (req, res) => {
   try {
-    const { id } = req.params;
-
     const result = await pool.query(
       'DELETE FROM todos WHERE id=$1 RETURNING *',
-      [id]
+      [req.params.id]
     );
 
     if (result.rowCount === 0) {
@@ -100,15 +81,13 @@ app.delete('/api/todos/:id', async (req, res) => {
 
     res.json({ message: 'Deleted successfully' });
   } catch (err) {
-    console.error(err);
     res.status(500).json({ error: err.message });
   }
 });
 
-// ✏️ UPDATE todo
+// PUT
 app.put('/api/todos/:id', async (req, res) => {
   try {
-    const { id } = req.params;
     const { title, completed } = req.body;
 
     if (!title || !title.trim()) {
@@ -117,7 +96,7 @@ app.put('/api/todos/:id', async (req, res) => {
 
     const result = await pool.query(
       'UPDATE todos SET title=$1, completed=$2 WHERE id=$3 RETURNING *',
-      [title.trim(), completed ?? false, id]
+      [title.trim(), completed ?? false, req.params.id]
     );
 
     if (result.rowCount === 0) {
@@ -126,18 +105,27 @@ app.put('/api/todos/:id', async (req, res) => {
 
     res.json(result.rows[0]);
   } catch (err) {
-    console.error(err);
     res.status(500).json({ error: err.message });
   }
 });
 
-// 🚀 Start server
-const PORT = process.env.PORT || 8080;
+// START SERVER (QUAN TRỌNG)
+const start = async () => {
+  try {
+    await initDB();
 
-if (process.env.NODE_ENV !== 'test') {
-  app.listen(PORT, () => {
-    console.log(`🚀 Server running on http://localhost:${PORT}`);
-  });
-}
+    if (process.env.NODE_ENV !== 'test') {
+      const PORT = process.env.PORT || 8080;
+      app.listen(PORT, () => {
+        console.log(`🚀 Running on ${PORT}`);
+      });
+    }
+  } catch (err) {
+    console.error('❌ Failed to start server:', err.message);
+  }
+};
 
-module.exports = app;
+start();
+
+// EXPORT CHUẨN CHO TEST
+module.exports = { app, pool };

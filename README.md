@@ -1,5 +1,6 @@
 # DevOps Base Project
-
+# Start Postgre
+docker compose up -d postgres
 ## Project Overview
 
 This is a simple Todo application with:
