@@ -2,7 +2,17 @@ const request = require('supertest');
 const { app, pool } = require('../server');
 
 beforeAll(async () => {
-  await pool.query(`TRUNCATE TABLE todos RESTART IDENTITY CASCADE`);
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS todos (
+      id SERIAL PRIMARY KEY,
+      title TEXT NOT NULL,
+      completed BOOLEAN DEFAULT false
+    )
+  `);
+
+  await pool.query(`
+    TRUNCATE TABLE todos RESTART IDENTITY CASCADE
+  `);
 });
 
 describe('Todos API', () => {
