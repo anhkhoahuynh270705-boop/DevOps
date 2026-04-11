@@ -26,7 +26,22 @@ const pool = new Pool({
   connectionTimeoutMillis: 5000,
   idleTimeoutMillis: 30000,
 });
+const initDB = async () => {
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS todos (
+        id SERIAL PRIMARY KEY,
+        title TEXT NOT NULL,
+        completed BOOLEAN DEFAULT FALSE
+      )
+    `);
+    console.log('✅ Table todos ready');
+  } catch (err) {
+    console.error('❌ Init DB error:', err.message);
+  }
+};
 
+initDB();
 // ✅ Test DB connection khi start server
 pool.connect()
   .then(() => console.log('✅ Connected to PostgreSQL'))
