@@ -35,7 +35,6 @@ function App() {
     fetchTodos();
   };
 
-  // 🧨 DELETE
   const deleteTodo = async (id) => {
     await fetch(`${API_URL}/api/todos/${id}`, {
       method: 'DELETE'
@@ -43,13 +42,11 @@ function App() {
     fetchTodos();
   };
 
-  // ✏️ START EDIT
   const startEdit = (todo) => {
     setEditingId(todo.id);
     setEditingText(todo.title);
   };
 
-  // 💾 SAVE EDIT
   const saveEdit = async (id) => {
     await fetch(`${API_URL}/api/todos/${id}`, {
       method: 'PUT',
@@ -63,43 +60,43 @@ function App() {
   };
 
   return (
-    <div style={{ padding: '20px', maxWidth: '600px', margin: '0 auto' }}>
-      <h1>🚀 DevOps Todo App</h1>
+    <div style={styles.container}>
+      <h1 style={styles.title}>🚀 DevOps Todo</h1>
 
-      <div style={{ marginBottom: '20px' }}>
+      <div style={styles.inputGroup}>
         <input
+          style={styles.input}
           value={newTodo}
           onChange={(e) => setNewTodo(e.target.value)}
           placeholder="Add new todo..."
         />
-        <button onClick={addTodo}>Add</button>
+        <button style={styles.addBtn} onClick={addTodo}>
+          Add
+        </button>
       </div>
 
-      <ul style={{ listStyle: 'none', padding: 0 }}>
+      <ul style={styles.list}>
         {todos.map(todo => (
-          <li key={todo.id} style={{
-            border: '1px solid #ddd',
-            marginBottom: '10px',
-            padding: '10px'
-          }}>
+          <li key={todo.id} style={styles.card}>
 
             {editingId === todo.id ? (
-              <>
+              <div style={styles.editBox}>
                 <input
+                  style={styles.input}
                   value={editingText}
                   onChange={(e) => setEditingText(e.target.value)}
                 />
-                <button onClick={() => saveEdit(todo.id)}>Save</button>
-                <button onClick={() => setEditingId(null)}>Cancel</button>
-              </>
+                <button style={styles.saveBtn} onClick={() => saveEdit(todo.id)}>Save</button>
+                <button style={styles.cancelBtn} onClick={() => setEditingId(null)}>Cancel</button>
+              </div>
             ) : (
-              <>
-                <span>{todo.title}</span>
+              <div style={styles.todoRow}>
+                <span style={styles.todoText}>{todo.title}</span>
                 <div>
-                  <button onClick={() => startEdit(todo)}>Edit</button>
-                  <button onClick={() => deleteTodo(todo.id)}>Delete</button>
+                  <button style={styles.editBtn} onClick={() => startEdit(todo)}>Edit</button>
+                  <button style={styles.deleteBtn} onClick={() => deleteTodo(todo.id)}>Delete</button>
                 </div>
-              </>
+              </div>
             )}
 
           </li>
@@ -108,5 +105,110 @@ function App() {
     </div>
   );
 }
+
+const styles = {
+  container: {
+    maxWidth: '600px',
+    margin: '50px auto',
+    padding: '20px',
+    fontFamily: 'Arial, sans-serif',
+    background: '#f5f7fa',
+    borderRadius: '12px',
+    boxShadow: '0 10px 30px rgba(0,0,0,0.1)'
+  },
+
+  title: {
+    textAlign: 'center',
+    marginBottom: '20px'
+  },
+
+  inputGroup: {
+    display: 'flex',
+    gap: '10px',
+    marginBottom: '20px'
+  },
+
+  input: {
+    flex: 1,
+    padding: '10px',
+    borderRadius: '8px',
+    border: '1px solid #ccc',
+    outline: 'none'
+  },
+
+  addBtn: {
+    padding: '10px 15px',
+    borderRadius: '8px',
+    border: 'none',
+    background: '#4CAF50',
+    color: '#fff',
+    cursor: 'pointer'
+  },
+
+  list: {
+    listStyle: 'none',
+    padding: 0
+  },
+
+  card: {
+    background: '#fff',
+    padding: '15px',
+    borderRadius: '10px',
+    marginBottom: '10px',
+    boxShadow: '0 4px 10px rgba(0,0,0,0.05)'
+  },
+
+  todoRow: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center'
+  },
+
+  todoText: {
+    fontSize: '16px'
+  },
+
+  editBtn: {
+    marginRight: '8px',
+    background: '#2196F3',
+    color: '#fff',
+    border: 'none',
+    padding: '6px 10px',
+    borderRadius: '6px',
+    cursor: 'pointer'
+  },
+
+  deleteBtn: {
+    background: '#f44336',
+    color: '#fff',
+    border: 'none',
+    padding: '6px 10px',
+    borderRadius: '6px',
+    cursor: 'pointer'
+  },
+
+  editBox: {
+    display: 'flex',
+    gap: '10px'
+  },
+
+  saveBtn: {
+    background: '#4CAF50',
+    color: '#fff',
+    border: 'none',
+    padding: '6px 10px',
+    borderRadius: '6px',
+    cursor: 'pointer'
+  },
+
+  cancelBtn: {
+    background: '#777',
+    color: '#fff',
+    border: 'none',
+    padding: '6px 10px',
+    borderRadius: '6px',
+    cursor: 'pointer'
+  }
+};
 
 export default App;
