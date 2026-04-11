@@ -2,8 +2,10 @@ const request = require('supertest');
 const { app, pool } = require('../server');
 
 beforeAll(async () => {
+  await pool.query(`DROP TABLE IF EXISTS todos`);
+
   await pool.query(`
-    CREATE TABLE IF NOT EXISTS todos (
+    CREATE TABLE todos (
       id SERIAL PRIMARY KEY,
       title TEXT NOT NULL,
       completed BOOLEAN DEFAULT FALSE
