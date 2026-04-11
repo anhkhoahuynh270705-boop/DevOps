@@ -1,5 +1,19 @@
 const request = require('supertest');
-const app = require('../server');
+const { app, pool } = require('../server');
+
+beforeAll(async () => {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS todos (
+      id SERIAL PRIMARY KEY,
+      title TEXT NOT NULL,
+      completed BOOLEAN DEFAULT false
+    )
+  `);
+
+  await pool.query(`
+    TRUNCATE TABLE todos RESTART IDENTITY CASCADE
+  `);
+});
 
 describe('Todos API', () => {
    // Test 1: Health check
@@ -81,4 +95,7 @@ describe('Todos API', () => {
       expect(updateRes.body.title).toBe('Updated title');
       expect(updateRes.body.completed).toBe(true);
    });
+});
+afterAll(async () => {
+  await pool.end();
 });

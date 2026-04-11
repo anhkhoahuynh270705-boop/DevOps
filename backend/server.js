@@ -1,61 +1,43 @@
+require('dotenv').config();
+
 const express = require('express');
 const { Pool } = require('pg');
 const cors = require('cors');
 const helmet = require('helmet');
 
 const app = express();
+
+// Middleware
 app.use(helmet());
 app.use(cors());
 app.use(express.json());
 
-if (process.env.NODE_ENV === 'test') {
-
-  let todos = [];
-  let id = 1;
-
-  app.get('/api/todos', (req, res) => res.json(todos));
-
-  app.post('/api/todos', (req, res) => {
-    const { title } = req.body;
-    if (!title || !title.trim()) {
-      return res.status(400).json({ error: 'title is required' });
-    }
-    const todo = { id: id++, title, completed: false };
-    todos.push(todo);
-    res.status(201).json(todo);
-  });
-
-  app.delete('/api/todos/:id', (req, res) => {
-    const index = todos.findIndex(t => t.id == req.params.id);
-    if (index === -1) return res.status(404).json({});
-    todos.splice(index, 1);
-    res.status(200).json({});
-  });
-
-  app.put('/api/todos/:id', (req, res) => {
-    const todo = todos.find(t => t.id == req.params.id);
-    if (!todo) return res.status(404).json({});
-    todo.title = req.body.title;
-    todo.completed = req.body.completed;
-    res.json(todo);
-  });
-}
-
-
-// FIX #1: Default password khớp với docker-compose
+// DB
 const pool = new Pool({
+  host: process.env.DB_HOST || 'localhost',
   user: process.env.DB_USER || 'myuser',
-  host: process.env.DB_HOST || 'postgres',
-  database: process.env.DB_NAME || 'mydatabase',
   password: process.env.DB_PASSWORD || 'mypass',
+  database: process.env.DB_NAME || 'devops',
   port: process.env.DB_PORT || 5432,
 });
 
+// INIT DB
+const initDB = async () => {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS todos (
+      id SERIAL PRIMARY KEY,
+      title TEXT NOT NULL,
+      completed BOOLEAN DEFAULT FALSE
+    )
+  `);
+};
+
+// Health
 app.get('/health', (req, res) => {
-  res.json({ status: 'healthy', version: '1.0.0' });
+  res.json({ status: 'healthy' });
 });
 
-// GET todos
+// GET
 app.get('/api/todos', async (req, res) => {
   try {
     const result = await pool.query('SELECT * FROM todos ORDER BY id');
@@ -65,7 +47,7 @@ app.get('/api/todos', async (req, res) => {
   }
 });
 
-// FIX #2: Validation cho POST
+// POST
 app.post('/api/todos', async (req, res) => {
   try {
     const { title, completed = false } = req.body;
@@ -78,30 +60,34 @@ app.post('/api/todos', async (req, res) => {
       'INSERT INTO todos(title, completed) VALUES($1, $2) RETURNING *',
       [title.trim(), completed]
     );
+
     res.status(201).json(result.rows[0]);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// FIX #3: DELETE endpoint
+// DELETE
 app.delete('/api/todos/:id', async (req, res) => {
   try {
-    const { id } = req.params;
-    const result = await pool.query('DELETE FROM todos WHERE id=$1 RETURNING *', [id]);
+    const result = await pool.query(
+      'DELETE FROM todos WHERE id=$1 RETURNING *',
+      [req.params.id]
+    );
+
     if (result.rowCount === 0) {
       return res.status(404).json({ error: 'Todo not found' });
     }
-    res.json({ message: 'Todo deleted' });
+
+    res.json({ message: 'Deleted successfully' });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// FIX #4: PUT endpoint
+// PUT
 app.put('/api/todos/:id', async (req, res) => {
   try {
-    const { id } = req.params;
     const { title, completed } = req.body;
 
     if (!title || !title.trim()) {
@@ -110,25 +96,36 @@ app.put('/api/todos/:id', async (req, res) => {
 
     const result = await pool.query(
       'UPDATE todos SET title=$1, completed=$2 WHERE id=$3 RETURNING *',
-      [title.trim(), completed, id]
+      [title.trim(), completed ?? false, req.params.id]
     );
+
     if (result.rowCount === 0) {
       return res.status(404).json({ error: 'Todo not found' });
     }
+
     res.json(result.rows[0]);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-const port = process.env.PORT || 8080;
+// START SERVER (QUAN TRỌNG)
+const start = async () => {
+  try {
+    await initDB();
 
-// FIX #5: Chỉ listen nếu không phải test
-if (process.env.NODE_ENV !== 'test') {
-  app.listen(port, () => {
-    console.log(`Backend running on port ${port}`);
-  });
-}
+    if (process.env.NODE_ENV !== 'test') {
+      const PORT = process.env.PORT || 8080;
+      app.listen(PORT, () => {
+        console.log(`🚀 Running on ${PORT}`);
+      });
+    }
+  } catch (err) {
+    console.error('❌ Failed to start server:', err.message);
+  }
+};
 
-// FIX #6: Export app cho supertest
-module.exports = app;
+start();
+
+// EXPORT CHUẨN CHO TEST
+module.exports = { app, pool };
