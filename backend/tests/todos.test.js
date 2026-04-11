@@ -2,15 +2,7 @@ const request = require('supertest');
 const { app, pool } = require('../server');
 
 beforeAll(async () => {
-  await pool.query(`DROP TABLE IF EXISTS todos`);
-
-  await pool.query(`
-    CREATE TABLE todos (
-      id SERIAL PRIMARY KEY,
-      title TEXT NOT NULL,
-      completed BOOLEAN DEFAULT FALSE
-    )
-  `);
+  await pool.query(`TRUNCATE TABLE todos RESTART IDENTITY CASCADE`);
 });
 
 describe('Todos API', () => {
@@ -93,4 +85,7 @@ describe('Todos API', () => {
       expect(updateRes.body.title).toBe('Updated title');
       expect(updateRes.body.completed).toBe(true);
    });
+});
+afterAll(async () => {
+  await pool.end();
 });
